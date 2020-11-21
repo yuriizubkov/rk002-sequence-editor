@@ -9,8 +9,8 @@ export default new Vuex.Store({
     actionTypes: [ // id 0 - empty slot, sessionIndex -1 - not set
       {
         actionTypeId: 1,
-        title: "Next Session",
-        hint: "Switch session",
+        title: "Switch Session",
+        hint: "Switch session to session number",
         color: "primary",
         icon: "mdi-skip-next-circle-outline",
         sessionIndex: -1,

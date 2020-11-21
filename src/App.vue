@@ -15,17 +15,30 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col cols="12" sm="2">
-            <v-sheet rounded="lg" min-height="268" class="sheets-fixed">
+          <v-col cols="12" sm="3">
+            <v-sheet rounded="lg" class="sheets-fixed" min-width="305" style="margin-left: -35px;">
               <!-- Left column -->
               <v-container>
                 <h3 class="text-center">Simulator</h3>
+                <p class="text--disabled text-center mb-0">
+                  Circuit sessions 1 - 32:
+                </p>
+                <v-row v-for="rowNumber in 4" :key="rowNumber" class="ma-1">
+                  <template v-for="colNumber in 8">
+                    <v-col :key="colNumber" class="pa-1 ma-0">
+                      <v-sheet rounded="lg" color="deep-purple darken-3" class="text-center">
+                        <span class="ma-1">
+                          {{(rowNumber - 1) * 8 + colNumber}}
+                        </span>                        
+                      </v-sheet>                      
+                    </v-col>
+                  </template>
+                </v-row>
               </v-container>
             </v-sheet>
           </v-col>
-
           <v-col cols="12" sm="8">
-            <v-sheet min-height="70vh" rounded="lg">
+            <v-sheet rounded="lg">
               <!-- Middle column -->
               <v-container>
                 <h3 class="text-center">Action Sequencer</h3>
@@ -43,9 +56,8 @@
               </v-container>
             </v-sheet>
           </v-col>
-
-          <v-col cols="12" sm="2">
-            <v-sheet rounded="lg" min-height="268" class="sheets-fixed">
+          <v-col cols="12" sm="1">
+            <v-sheet rounded="lg" class="sheets-fixed">
               <!-- Right column -->
               <v-container>
                 <h3 class="text-center">Actions</h3>
