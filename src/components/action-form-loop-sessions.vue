@@ -1,6 +1,6 @@
 <template>
   <v-card-text>
-    <v-form v-model="formValid">
+    <v-form v-if="model" v-model="model.valid">
       <v-container class="pt-0 pb-0">
         <v-row>
           <v-col cols="12" md="4" class="pb-0">
@@ -38,10 +38,24 @@
     </v-form>
   </v-card-text>
 </template>
+
 <script>
+import { mapState, mapMutations } from 'vuex'
+
 export default {
+  props: {
+    action: {
+      type: Object,
+      required: true
+    },
+    actionIndex: {
+      type: Number,
+      required: true
+    }
+  },
+  
   data: () => ({
-    formValid: false,
+    model: null,
     sessionNumberFrom: 1,
     sessionNumberTo: 8,
     repeats: 4,
@@ -64,5 +78,40 @@ export default {
         }
     ]
   }),
+
+  watch: {
+    model: {
+      handler(val) {
+        this.modifySequenceActionAt({ actionIndex: this.actionIndex, newValue: val })
+      },
+      deep: true
+    }, 
+    sessionNumberFrom: function(val) {
+      if(!this.model) return
+      this.model.startSessionIndex = Number(val) - 1 // this will trigger model watcher
+    },
+    sessionNumberTo: function(val) {
+      if(!this.model) return
+      this.model.endSessionIndex = Number(val) - 1 // this will trigger model watcher
+    },
+    repeats: function(val) {
+      if(!this.model) return
+      this.model.repeats = Number(val) // this will trigger model watcher
+    }
+  },
+
+  computed: mapState(['sequence']),
+
+  methods: {
+    ...mapMutations(['modifySequenceActionAt'])
+  },
+
+  mounted: function () {
+    this.$nextTick(function () {
+      // Code that will run only after the
+      // entire view has been rendered
+      this.model = Object.assign({}, this.action) // cloning action
+    })
+  }
 }
 </script>

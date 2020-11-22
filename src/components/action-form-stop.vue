@@ -5,8 +5,15 @@
 </template>
 <script>
 export default {
-  data: () => ({
-    
-  })
+  props: {
+    action: {
+      type: Object,
+      required: true
+    },
+    actionIndex: {
+      type: Number,
+      required: true
+    }
+  }
 }
 </script>

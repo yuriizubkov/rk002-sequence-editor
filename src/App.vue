@@ -7,7 +7,7 @@
           {{ link.title }}
         </v-tab>
       </v-tabs>
-      <v-btn icon outlined rounded class="mr-1">
+      <v-btn icon outlined rounded class="mr-1" @click="onSyncClick">
         <v-icon>mdi-sync</v-icon>
       </v-btn>
     </v-app-bar>
@@ -29,7 +29,7 @@
                       <v-sheet rounded="lg" color="deep-purple darken-3" class="text-center">
                         <span class="ma-1">
                           {{(rowNumber - 1) * 8 + colNumber}}
-                        </span>                        
+                        </span>
                       </v-sheet>                      
                     </v-col>
                   </template>
@@ -46,7 +46,6 @@
                   <v-col cols="12">
                     <SequenceEntry
                       v-for="(sequenceEntry, index) in sequence"
-                      :model="sequenceEntry"
                       :key="index"
                       :action-index="index"
                       :class="index != 0 ? 'mt-3' : ''"
@@ -90,13 +89,31 @@
         </v-row>
       </v-container>
     </v-main>
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="snackbarTimeout"
+      :color="snackbarColor"
+    >
+      {{ nextErrorMessage }}
+
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="white"
+          text
+          v-bind="attrs"
+          @click="snackbar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
     <v-footer inset app>{{ statusBarText }}</v-footer>
   </v-app>
 </template>
 
 <script>
 import SequenceEntry from "./components/sequence-entry";
-import { mapState } from 'vuex'
+import { mapState, mapMutations, mapGetters } from 'vuex'
 
 export default {
   name: "rk002-sequence-editor",
@@ -107,6 +124,10 @@ export default {
 
   data: () => ({
     activeTab: 1,
+    snackbar: false,
+    snackbarTimeout: 3000,
+    snackbarText: '',
+    snackbarColor: 'red',
     statusBarText: "Status bar",
     links: [
       { title: "Home", url: "/" },
@@ -114,7 +135,14 @@ export default {
     ],
   }),
 
-  computed: mapState(['actionTypes', 'sequence']),
+  computed: { 
+    ...mapState([
+      'actionTypes', 
+      'sequence']),
+    ...mapGetters([
+      'sequenceValid', 
+      'nextErrorMessage'])
+  },
 
   methods: {
     onChipDragStart: function (event, action) {
@@ -127,15 +155,23 @@ export default {
     },
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
-    }
+    },
+    onSyncClick: function(){
+      if(!this.sequenceValid) { 
+        this.snackbar = true
+      }
+    },
+    ...mapMutations([
+      'clearSequenceActionAt', 
+      'addSequenceActionAt'])
   },
 };
 </script>
 <style scoped>
-.action-chips {
-  cursor: grab;
-}
-.sheets-fixed {
-  position: fixed;
-}
+  .action-chips {
+    cursor: grab;
+  }
+  .sheets-fixed {
+    position: fixed;
+  }
 </style>
