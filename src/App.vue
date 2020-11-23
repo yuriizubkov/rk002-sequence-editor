@@ -16,26 +16,8 @@
       <v-container>
         <v-row>
           <v-col cols="12" sm="3">
-            <v-sheet rounded="lg" class="sheets-fixed" min-width="305" style="margin-left: -35px;">
-              <!-- Left column -->
-              <v-container>
-                <h3 class="text-center">Simulator</h3>
-                <p class="text--disabled text-center mb-0">
-                  Circuit sessions 1 - 32:
-                </p>
-                <v-row v-for="rowNumber in 4" :key="rowNumber" class="ma-1">
-                  <template v-for="colNumber in 8">
-                    <v-col :key="colNumber" class="pa-1 ma-0">
-                      <v-sheet rounded="lg" color="deep-purple darken-3" class="text-center">
-                        <span class="ma-1">
-                          {{(rowNumber - 1) * 8 + colNumber}}
-                        </span>
-                      </v-sheet>                      
-                    </v-col>
-                  </template>
-                </v-row>
-              </v-container>
-            </v-sheet>
+            <!-- Left column -->
+            <SequencerSimulator />
           </v-col>
           <v-col cols="12" sm="8">
             <v-sheet rounded="lg">
@@ -91,10 +73,10 @@
     </v-main>
     <v-snackbar
       v-model="snackbar"
-      :timeout="snackbarTimeout"
+      :timeout="10000"
       :color="snackbarColor"
     >
-      {{ nextErrorMessage }}
+      {{ snackbarText }}
 
       <template v-slot:action="{ attrs }">
         <v-btn
@@ -112,7 +94,8 @@
 </template>
 
 <script>
-import SequenceEntry from "./components/sequence-entry";
+import SequencerSimulator from "./components/sequencer-simulator"
+import SequenceEntry from "./components/sequence-entry"
 import { mapState, mapMutations, mapGetters } from 'vuex'
 
 export default {
@@ -120,12 +103,12 @@ export default {
 
   components: {
     SequenceEntry,
+    SequencerSimulator
   },
 
   data: () => ({
     activeTab: 1,
     snackbar: false,
-    snackbarTimeout: 3000,
     snackbarText: '',
     snackbarColor: 'red',
     statusBarText: "Status bar",
@@ -137,11 +120,20 @@ export default {
 
   computed: { 
     ...mapState([
-      'actionTypes', 
+      'actionTypes',
+      'errorMessage', 
       'sequence']),
-    ...mapGetters([
-      'sequenceValid', 
-      'nextErrorMessage'])
+    ...mapGetters(['sequenceValid'])
+  },
+
+  watch: {
+    errorMessage: function(val) {
+      if(val.length > 0) {
+        this.snackbarText = val
+        this.setErrorMessage('')
+        this.snackbar = true
+      }
+    }
   },
 
   methods: {
@@ -156,14 +148,15 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
-    onSyncClick: function(){
-      if(!this.sequenceValid) { 
-        this.snackbar = true
+    onSyncClick: function() {
+      if(!this.sequenceValid()) {
+        // todo
       }
     },
     ...mapMutations([
       'clearSequenceActionAt', 
-      'addSequenceActionAt'])
+      'addSequenceActionAt',
+      'setErrorMessage'])
   },
 };
 </script>

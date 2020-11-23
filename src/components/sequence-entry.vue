@@ -1,6 +1,6 @@
 <template>
   <v-card elevation="2" outlined shaped
-    :class="action !== null ? 'blue-grey darken-4' : ''"
+    :class="colorClass"
     @dragenter="onCheckDrop"
     @dragover="onCheckDrop"
     @drop.prevent="onChipDrop">
@@ -44,6 +44,17 @@ export default {
   }),
 
   computed: {
+    colorClass: function() {
+      if(this.action !== null){
+        if (this.actionIndex === this.activeActionIndex) {
+          return 'blue-grey darken-1'
+        } else {
+          return 'blue-grey darken-4'
+        }
+      } else {
+        return ''
+      }
+    },
     action: function() {
       if (this.sequence) {
         return this.sequence[this.actionIndex]
@@ -51,7 +62,9 @@ export default {
         return null
       }
     },
-    ...mapState(['sequence'])
+    ...mapState([
+      'sequence',
+      'activeActionIndex'])
   },
 
   methods: {
