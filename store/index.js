@@ -7,7 +7,7 @@ export default new Vuex.Store({
   state: {
     errorMessages: [], // array of strings
     sequence: new Array(30).fill(null),
-    actionTypes: [ // id 0 - empty slot, sessionIndex -1 - not set
+    actionTypes: [ 
       {
         valid: false,
         actionTypeId: 1,
@@ -53,28 +53,41 @@ export default new Vuex.Store({
         color: "pink",
         icon: "mdi-stop-circle-outline"
       },
-      //{ actionTypeId: 6, title: "Reserved" },
+      //{ actionTypeId: 6, title: "Reserved" }, not sure what types of actions we need
       //{ actionTypeId: 7, title: "Reserved" },
     ],
   },
   getters: {
     sequenceValid: state => {    
-      if(state.sequence.filter(action => action !== null).length > 0) {
-        if(state.sequence[0] === null) { 
-          state.errorMessages.push('First sequencer slot can\'t be empty')
-          return false
-        }
-        
-        if(state.sequence.filter(action => action && action.valid === false).length === 0) {
-          return true
-        } else {
-          state.errorMessages.push('Some of the sequencer actions are not valid')
-          return false
-        }
-      } else {
+      // Is sequence empty
+      if(state.sequence.filter(action => action === null).length === state.sequence.length) {
         state.errorMessages.push('Sequence is empty')
         return false
       }
+
+      // Is first slot present
+      if(state.sequence[0] === null) { 
+        state.errorMessages.push('First sequencer slot can\'t be empty')
+        return false
+      }
+
+      // Is every action valid
+      if(state.sequence.filter(action => action && action.valid === false).length !== 0) {
+        state.errorMessages.push('Some of the sequencer actions are not valid')
+        return false
+      }
+
+      // Checking sequence logic (some of the logic for now)
+      let hadNullSequenceEntry = false
+      for (let index = 0; index < state.sequence.length; index++) {
+        if(state.sequence[index] === null) hadNullSequenceEntry = true
+        if(state.sequence[index] !== null && hadNullSequenceEntry) {
+          state.errorMessages.push('Sequence have empty slots between actions')
+          return false
+        }
+      }
+
+      return true
     },
     nextErrorMessage: state => {
       const message = state.errorMessages.pop()
