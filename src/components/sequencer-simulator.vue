@@ -95,6 +95,13 @@ export default {
     },
     onTimer: function () {
       this.audio.play() // play tick sound
+      
+      // If we edited step when sequencer is running
+      if(!this.sequenceValid()) {
+        this.stopSequencer()
+        return
+      }
+
       this.beatsUntilNextAction--
       if(this.beatsUntilNextAction === 0) {
         if(this.loopingSessionsRepeats !== null) {
@@ -178,7 +185,8 @@ export default {
 
         case 4: {
           // loop actions
-          
+          this.setErrorMessage('Loop Actions is not supported at the moment')
+          this.stopSequencer()
           break
         }
 
@@ -196,7 +204,9 @@ export default {
         }
       }
     },
-    ...mapMutations(['setActiveActionIndex'])
+    ...mapMutations([
+      'setActiveActionIndex',
+      'setErrorMessage'])
   },
 }
 </script>

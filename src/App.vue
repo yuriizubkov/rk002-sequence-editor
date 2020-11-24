@@ -52,6 +52,7 @@
                 >
                   <v-chip
                     class="action-chips ma-2"
+                    :disabled="action.actionTypeId === 4"
                     :key="index"
                     :color="action.color"
                     :input-value="true"
