@@ -116,7 +116,7 @@ export default {
     links: [
       { title: "Home", url: "/" },
       { title: "RK002 - Circuit Song Mode", url: "" },
-      { title: "About", url: "" }
+      { title: "About", url: "/retrokits/2020/11/24/rk002-circuit-song-mode.html" }
     ],
   }),
 
