@@ -3,6 +3,6 @@ module.exports = {
     "vuetify"
   ],
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/rk-002-sequence-editor/'
+    ? '/rk002-sequence-editor/'
     : '/'
 }
