@@ -1,9 +1,9 @@
 <template>
   <v-sheet
     rounded="lg"
-    class="sheets-fixed"
     min-width="305"
-    style="margin-left: -35px"
+    max-width="305"
+    class="sheets-fixed"
   >
     <v-container>
       <h3 class="text-center">Simulator</h3>
@@ -25,8 +25,8 @@
       </v-row>
       <v-row align="center" justify="center">
          <v-item-group class="v-btn-toggle">      
-          <v-btn @click="onPlayStop" :color="sequencerIsPlaying ? 'primary': ''">
-            <v-icon>{{ sequencerIsPlaying ? 'mdi-stop-circle-outline' : 'mdi-play-circle-outline' }}</v-icon>
+          <v-btn @click="onPlayStop" :color="timer !== null ? 'primary': ''">
+            <v-icon>{{ timer !== null ? 'mdi-stop-circle-outline' : 'mdi-play-circle-outline' }}</v-icon>
           </v-btn>
           <v-btn>
             <v-progress-circular class="no-transition" :value="currentActionProgress">{{ (beatsTotal - beatsUntilNextAction) + 1 }}</v-progress-circular>
@@ -47,7 +47,6 @@ export default {
   data: () => ({
     audio: new Audio('tick.mp3'),
     currentSessionPadIndex: null,
-    sequencerIsPlaying: false,
     timer: null,
     beatsUntilNextAction: 0,
     beatsTotal: 0,
@@ -57,7 +56,7 @@ export default {
   computed: {
     currentActionProgress: function() {
       if(this.beatsTotal === 0) return 0
-      return ((this.beatsTotal - this.beatsUntilNextAction) + 1) / this.beatsTotal * 100 // 4-4=0, 4-3=1, 4-2=2, 4-1=3, 4-4=0
+      return ((this.beatsTotal - this.beatsUntilNextAction) + 1) / this.beatsTotal * 100 
     },
     ...mapState([
       "sequence", 
@@ -76,14 +75,13 @@ export default {
         return
       }
 
-      this.setActiveActionIndex(null)
-      this.sequencerIsPlaying = true
+      this.stopSequencer() // reset all counters
       this.audio.play() // play tick sound
       this.processNextSequencerAction()
       this.timer = setInterval(this.onTimer, 500)
     },
     onNext: function() {
-      if(this.sequencerIsPlaying && this.timer) {
+      if(this.timer) {
         this.stopSequencer()
       }
 
@@ -113,7 +111,6 @@ export default {
       this.setActiveActionIndex(null)
       this.currentSessionPadIndex = null
       this.loopingSessionsRepeats = null
-      this.sequencerIsPlaying = false
       this.beatsUntilNextAction = 0
       this.beatsTotal = 0
     },

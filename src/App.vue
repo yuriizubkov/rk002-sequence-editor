@@ -15,17 +15,17 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col cols="12" sm="3">
+          <v-col class="d-flex justify-end align-start" cols="3" md="4" lg="3">
             <!-- Left column -->
             <SequencerSimulator />
           </v-col>
-          <v-col cols="12" sm="8">
-            <v-sheet rounded="lg">
+          <v-col class="d-flex justify-center" cols="6" md="6" lg="6">
+            <v-sheet rounded="lg" style="width: 100%;">
               <!-- Middle column -->
               <v-container>
                 <h3 class="text-center">Action Sequencer</h3>
                 <v-row dense>
-                  <v-col cols="12">
+                  <v-col>
                     <SequenceEntry
                       v-for="(sequenceEntry, index) in sequence"
                       :key="index"
@@ -37,8 +37,8 @@
               </v-container>
             </v-sheet>
           </v-col>
-          <v-col cols="12" sm="1">
-            <v-sheet rounded="lg" class="sheets-fixed">
+          <v-col class="d-flex justify-start align-start" cols="3" md="2" lg="3">
+            <v-sheet rounded="lg" max-width="175px" min-width="175px" class="sheets-fixed">
               <!-- Right column -->
               <v-container>
                 <h3 class="text-center">Actions</h3>
@@ -115,6 +115,7 @@ export default {
     links: [
       { title: "Home", url: "/" },
       { title: "RK002 - Circuit Song Mode", url: "" },
+      { title: "About", url: "" }
     ],
   }),
 
