@@ -50,7 +50,7 @@ export default new Vuex.Store({
         valid: true, // nothing to edit here
         actionTypeId: 2,
         title: "Stop Sequence",
-        hint: 'Switch session to empty slot and stop sequencer. Circuit will "play" empty slot.',
+        hint: 'Stop sequencer. Circuit will play last loaded session.',
         color: "pink",
         icon: "mdi-stop-circle-outline"
       },
