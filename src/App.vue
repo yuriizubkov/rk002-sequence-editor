@@ -11,7 +11,7 @@
       </v-tabs>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on">
+          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on" :disabled="commDisabled">
             <v-icon>mdi-arrow-down-bold</v-icon>
           </v-btn>
         </template>
@@ -19,7 +19,7 @@
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on">
+          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on" :disabled="commDisabled">
             <v-icon>mdi-arrow-up-bold</v-icon>
           </v-btn>  
         </template>
@@ -127,8 +127,10 @@
             <v-row>
               <v-col cols="12" sm="6">
                 <v-select
+                  :disabled="commInProcess"
                   :items="midiInputs"
-                  label="Input"
+                  v-model="selectedMidiInputId"
+                  label="Input (Orange connector)"
                   required
                   outlined
                   dense
@@ -136,23 +138,31 @@
               </v-col>
               <v-col cols="12" sm="6">
                 <v-select
+                  :disabled="commInProcess"
                   :items="midiOutputs"
-                  label="Output"
+                  v-model="selectedMidiOutputId"
+                  label="Output (Black connector)"
                   required
                   outlined
                   dense
                 ></v-select>
               </v-col>
             </v-row>
+            <v-row v-if="firmwareInfo">
+              <small class="font-weight-bold">{{ firmwareInfo.name }} v{{ firmwareInfo.version }}</small>
+            </v-row>
+            <v-row v-if="firmwareInfo">
+              <small class="font-weight-bold">{{ firmwareInfo.author }}</small>
+            </v-row>
           </v-container>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="configDialog = false">
-            Close
+          <v-btn color="primary" @click="tryToConnect" :disabled="commInProcess">
+            Connect
           </v-btn>
-          <v-btn color="blue darken-1" text @click="configDialog = false">
-            Save
+          <v-btn color="default" @click="configDialog = false">
+            Close
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -177,8 +187,14 @@ export default {
   },
 
   data: () => ({
+    expectedFirmwareGUID: "c1825f6a-45fd-4ccc-b470-e3064ee4f94f",
+    expectedFirmwareVersion: "1.0",
+    commInProcess: false,
+    firmwareInfo: null,
     configDialog: false,
     midiInputsAndOutputs: null,
+    selectedMidiInputId: -1,
+    selectedMidiOutputId: -1,
     activeTab: 1,
     snackbar: false,
     snackbarText: '',
@@ -211,6 +227,25 @@ export default {
         } 
       })
     },
+    connected: function() {
+      if(!this.midiInputsAndOutputs) return false
+
+      const input = this.midiInputsAndOutputs.inputs.find(input => input.id === this.selectedMidiInputId)
+      const output = this.midiInputsAndOutputs.outputs.find(output => output.id === this.selectedMidiOutputId)
+
+      return this.firmwareInfo &&
+        input &&
+        output &&
+        input.state === "connected" &&
+        output.state === "connected"
+    },
+    commDisabled: function() {
+      return !this.connected ||
+        this.commInProcess ||
+        !this.firmwareInfo || 
+        this.firmwareInfo.version !== this.expectedFirmwareVersion || 
+        this.firmwareInfo.guid !== this.expectedFirmwareGUID
+    },
     ...mapState([
       'actionTypes',
       'errorMessage', 
@@ -224,6 +259,23 @@ export default {
         this.snackbarText = val
         this.setErrorMessage('')
         this.snackbar = true
+      }
+    },
+    selectedMidiInputId: async function(val) {
+      localStorage.selectedMidiInputId = val
+      if(!midiObserver.setMidiInputId(this.selectedMidiInputId)) return
+      this.tryToConnect()
+    },
+    selectedMidiOutputId: async function(val) {
+      localStorage.selectedMidiOutputId = val
+      if(!midiObserver.setMidiOutputId(this.selectedMidiOutputId)) return
+      this.tryToConnect()
+    },
+    firmwareInfo: function(val) {
+      if(!val) return
+      // check if correct software and show error if not
+      if (val.version !== this.expectedFirmwareVersion || val.guid !== this.expectedFirmwareGUID) {
+        this.setErrorMessage('You have unsupported software on the RK002')
       }
     }
   },
@@ -240,25 +292,52 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
-    onMidiStateChange: function(port) {
+    onMidiStateChange: function(port) { // TODO: NEED TO REFACTOR this mess. Let's make just one source of ports - rk002-wrapper
       if(port.type === "input") {
         const item = this.midiInputsAndOutputs.inputs.find(item => item.id === port.id)
         if(item) {
           // existing input port
           item.state = port.state
+          if(item.id === this.selectedMidiInputId) {
+            if(item.state === "disconnected") this.firmwareInfo = null
+            else this.tryToConnect()
+          }
         } else {
-          // new input port, adding to top of an array
-          this.midiInputsAndOutputs.inputs.unshift(port)
+          // new input port
+          this.midiInputsAndOutputs.inputs.push(port)
+          this.tryToConnect()
         }
       } else if (port.type === "output") {
         const item = this.midiInputsAndOutputs.outputs.find(item => item.id === port.id)
         if(item) {
           // existing input port
           item.state = port.state
+          if(item.id === this.selectedMidiOutputId) {
+            if(item.state === "disconnected") this.firmwareInfo = null
+            else this.tryToConnect()
+          }
         } else {
-          // new input port, adding to top of an array
-          this.midiInputsAndOutputs.outputs.unshift(port)
+          // new input port
+          this.midiInputsAndOutputs.outputs.push(port)
+          this.tryToConnect()
         }
+      }
+    },
+    tryToConnect: async function() {
+      // probably good idea to add debounce timeout here, when we have a bunch of events for new devices
+      if(this.selectedMidiInputId !== -1 && 
+        this.selectedMidiOutputId !== -1 && 
+        !this.commInProcess) {
+
+        this.commInProcess = true
+        this.firmwareInfo = null
+        try {
+          this.firmwareInfo = await midiObserver.inquiryDevice()
+        } catch (err) {
+          console.error("tryToConnect error:", err)
+        }
+
+        this.commInProcess = false
       }
     },
     ...mapMutations([
@@ -271,8 +350,18 @@ export default {
     try {
       midiObserver.onMidiStateChange = this.onMidiStateChange.bind(this)
       this.midiInputsAndOutputs = await midiObserver.initWebMIDI()
+
+      if(localStorage.selectedMidiInputId) {
+        midiObserver.setMidiInputId(localStorage.selectedMidiInputId)
+        this.selectedMidiInputId = localStorage.selectedMidiInputId        
+      }
+
+      if(localStorage.selectedMidiOutputId) {
+        midiObserver.setMidiOutputId(localStorage.selectedMidiOutputId)
+        this.selectedMidiOutputId = localStorage.selectedMidiOutputId 
+      }
     } catch(err) {
-      console.error("initWebMIDI error:", err)
+      console.error("onMounted error:", err)
     }
   }
 }

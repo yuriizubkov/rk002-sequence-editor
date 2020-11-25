@@ -8,6 +8,8 @@ class RK002MIDIObserver {
     this._midiAccess = null
     this._pendingPromise = null
     this._busyErr = Error("Device is busy")
+    this._midiInputId = null
+    this._midiOutputId = null
 
     this.onParamDefs = null
     this.onMidiStateChange = null
@@ -20,6 +22,11 @@ class RK002MIDIObserver {
 
   rk002_consoleTxt(txt) {
     console.log("rk002_consoleTxt:", txt)
+    // really bad hack here... because in JS we need to use Promises since ES6
+    if((txt + "").toLowerCase().includes('error') && this._pendingPromise !== null) {
+      this._pendingPromise.reject(txt)
+      this._pendingPromise = null
+    }
   }
 
   // progress or status bar updates 0 - 100 for long operations
@@ -57,16 +64,32 @@ class RK002MIDIObserver {
   }
 
   _onMidiStateChange(e) {
-    if(!this.onMidiStateChange) return
-
-    const port = { 
-      name: e.port.name, 
-      id: e.port.id,
-      state: e.port.state,
-      type: e.port.type
+    if(e.port.type === "input" && !this._allInputs.find(input => input.id === e.port.id)) {
+      // adding new input to cache
+      this._allInputs.push(e.port)
+      if(this._midiInputId === e.port.id) {
+        this.rk002.setInputDriver(e.port)
+      }
     }
 
-    this.onMidiStateChange(port)
+    if(e.port.type === "output" && !this._allOutputs.find(output => output.id === e.port.id)) {
+      // adding new input to cache
+      this._allOutputs.push(e.port)
+      if(this._midiOutputId === e.port.id) {
+        this.rk002.setOutputDriver(e.port)
+      }
+    }
+
+    if(this.onMidiStateChange) {
+      const port = { 
+        name: e.port.name, 
+        id: e.port.id,
+        state: e.port.state,
+        type: e.port.type
+      }
+
+      this.onMidiStateChange(port)
+    }
   }
 
   // Async/Await wrappers around RK002 lib
@@ -74,7 +97,9 @@ class RK002MIDIObserver {
   async initWebMIDI() {
     this._midiAccess = await navigator.requestMIDIAccess({ sysex: true })
     this._midiAccess.onstatechange = this._onMidiStateChange.bind(this)
-    this._allInputs = Array.from(this._midiAccess.inputs.values()).map(input => { 
+
+    this._allInputs = Array.from(this._midiAccess.inputs.values())
+    const convertedIns = this._allInputs.map(input => { 
       return { 
         name: input.name, 
         id: input.id,
@@ -82,7 +107,8 @@ class RK002MIDIObserver {
       } 
     })
 
-    this._allOutputs = Array.from(this._midiAccess.outputs.values()).map(output => { 
+    this._allOutputs = Array.from(this._midiAccess.outputs.values())    
+    const convertedOuts = this._allOutputs.map(output => { 
       return { 
         name: output.name, 
         id: output.id,
@@ -91,31 +117,37 @@ class RK002MIDIObserver {
     })
 
     return {
-      inputs: this._allInputs,
-      outputs: this._allOutputs
+      inputs: convertedIns,
+      outputs: convertedOuts
     }
-
-    //const rk002Input = allInputs.find(input => input.name === "RK006 IN_1")
-    //const rk002Output = allOutputs.find(output => output.name === "RK006 OUT_5")
-
-    //console.log(rk002Input)
-    //console.log(rk002Output)
-
-    // if (rk002Input && rk002Input.length != 0
-    //   && rk002Output && rk002Output.length != 0) {
-    //   rk002.setInputDriver(rk002Input)
-    //   rk002.setOutputDriver(rk002Output)
-    // } else {
-    //   throw Error("rk002 is not connected")
-    // }
   }
 
-  setInputId(id) {
-    console.log(id)
+  setMidiInputId(id) {
+    this._midiInputId = id
+    const inputPort = this._allInputs.find(input => input.id === id)
+
+    if(inputPort) { 
+      this.rk002.setInputDriver(inputPort)
+      console.log('Input set:', inputPort)
+      return true
+    } else {
+      console.log('======== INPUT ID NOT FOUND ========')
+      return false
+    }
   }
 
-  setOutputId(id) {
-    console.log(id)
+  setMidiOutputId(id) {
+    this._midiOutputId = id
+    const outputPort = this._allOutputs.find(output => output.id === id)
+
+    if(outputPort) { 
+      this.rk002.setOutputDriver(outputPort)
+      console.log('Output set:', outputPort)
+      return true
+    } else {
+      console.log('======== OUTPUT ID NOT FOUND ========')
+      return false
+    }
   }
 
   inquiryDevice() {
