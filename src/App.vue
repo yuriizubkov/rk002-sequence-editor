@@ -9,15 +9,30 @@
           {{ link.title }}
         </v-tab>
       </v-tabs>
-      <v-btn icon outlined rounded class="mr-1">
-        <v-icon>mdi-arrow-down-bold</v-icon>
-      </v-btn>
-      <v-btn icon outlined rounded class="mr-1">
-        <v-icon>mdi-arrow-up-bold</v-icon>
-      </v-btn>      
-      <v-btn icon outlined rounded class="mr-1" @click.stop="configDialog = true">
-        <v-icon>mdi-cog</v-icon>
-      </v-btn>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on">
+            <v-icon>mdi-arrow-down-bold</v-icon>
+          </v-btn>
+        </template>
+        <span>Download sequence from RK002</span>
+      </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on">
+            <v-icon>mdi-arrow-up-bold</v-icon>
+          </v-btn>  
+        </template>
+        <span>Upload sequence to RK002</span>
+      </v-tooltip>    
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn icon outlined rounded class="mr-1" @click.stop="configDialog = true" v-bind="attrs" v-on="on">
+            <v-icon>mdi-cog</v-icon>
+          </v-btn>
+        </template>
+        <span>MIDI Configuration</span>
+      </v-tooltip>
     </v-app-bar>
 
     <v-main>
@@ -120,13 +135,13 @@
                 ></v-select>
               </v-col>
               <v-col cols="12" sm="6">
-                <v-autocomplete
+                <v-select
                   :items="midiOutputs"
                   label="Output"
                   required
                   outlined
                   dense
-                ></v-autocomplete>
+                ></v-select>
               </v-col>
             </v-row>
           </v-container>
@@ -149,6 +164,9 @@
 import SequencerSimulator from "./components/sequencer-simulator"
 import SequenceEntry from "./components/sequence-entry"
 import { mapState, mapMutations, mapGetters } from 'vuex'
+import RK002MIDIObserver from './assets/js/rk002-wrapper'
+
+const midiObserver = new RK002MIDIObserver()
 
 export default {
   name: "rk002-sequence-editor",
@@ -160,8 +178,7 @@ export default {
 
   data: () => ({
     configDialog: false,
-    midiInputs: [],
-    midiOutputs: [],
+    midiInputsAndOutputs: null,
     activeTab: 1,
     snackbar: false,
     snackbarText: '',
@@ -174,6 +191,26 @@ export default {
   }),
 
   computed: { 
+    midiInputs: function() {
+      if(this.midiInputsAndOutputs === null) return []
+      return this.midiInputsAndOutputs.inputs.map(input => { 
+        return { 
+          text: input.name, 
+          value: input.id,
+          disabled: input.state === "disconnected"
+        } 
+      })
+    },
+    midiOutputs: function() {
+      if(this.midiInputsAndOutputs === null) return []
+      return this.midiInputsAndOutputs.outputs.map(output => { 
+        return { 
+          text: output.name, 
+          value: output.id,
+          disabled: output.state === "disconnected"
+        } 
+      })
+    },
     ...mapState([
       'actionTypes',
       'errorMessage', 
@@ -203,9 +240,25 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
-    onSyncClick: function() {
-      if(!this.sequenceValid()) {
-        // todo
+    onMidiStateChange: function(port) {
+      if(port.type === "input") {
+        const item = this.midiInputsAndOutputs.inputs.find(item => item.id === port.id)
+        if(item) {
+          // existing input port
+          item.state = port.state
+        } else {
+          // new input port, adding to top of an array
+          this.midiInputsAndOutputs.inputs.unshift(port)
+        }
+      } else if (port.type === "output") {
+        const item = this.midiInputsAndOutputs.outputs.find(item => item.id === port.id)
+        if(item) {
+          // existing input port
+          item.state = port.state
+        } else {
+          // new input port, adding to top of an array
+          this.midiInputsAndOutputs.outputs.unshift(port)
+        }
       }
     },
     ...mapMutations([
@@ -213,7 +266,16 @@ export default {
       'addSequenceActionAt',
       'setErrorMessage'])
   },
-};
+
+  mounted: async function() {
+    try {
+      midiObserver.onMidiStateChange = this.onMidiStateChange.bind(this)
+      this.midiInputsAndOutputs = await midiObserver.initWebMIDI()
+    } catch(err) {
+      console.error("initWebMIDI error:", err)
+    }
+  }
+}
 </script>
 <style scoped>
   .action-chips {
