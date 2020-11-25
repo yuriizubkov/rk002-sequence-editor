@@ -1,14 +1,22 @@
 <template>
   <v-app id="rk002-sequence-editor">
     <v-app-bar app flat>
-      <v-toolbar-title style="min-width: 150px">LENSFLARE.DEV</v-toolbar-title>
-      <v-tabs centered class="ml-n9" color="grey darken-1" v-model="activeTab">
+      <v-toolbar-title style="min-width: 150px">
+        <a class="title-link" href="/">LENSFLARE.DEV</a>
+      </v-toolbar-title>
+      <v-tabs color="grey darken-1" class="ml-2 mr-2" v-model="activeTab">
         <v-tab v-for="link in links" :key="link.title" :href="link.url">
           {{ link.title }}
         </v-tab>
       </v-tabs>
+      <v-btn icon outlined rounded class="mr-1">
+        <v-icon>mdi-arrow-down-bold</v-icon>
+      </v-btn>
+      <v-btn icon outlined rounded class="mr-1">
+        <v-icon>mdi-arrow-up-bold</v-icon>
+      </v-btn>      
       <v-btn icon outlined rounded class="mr-1" @click="onSyncClick">
-        <v-icon>mdi-sync</v-icon>
+        <v-icon>mdi-cog</v-icon>
       </v-btn>
     </v-app-bar>
 
@@ -114,7 +122,6 @@ export default {
     snackbarColor: 'red',
     statusBarText: "Status bar",
     links: [
-      { title: "Home", url: "/" },
       { title: "RK002 - Circuit Song Mode", url: "" },
       { title: "About", url: "/retrokits/2020/11/24/rk002-circuit-song-mode.html" }
     ],
@@ -168,5 +175,9 @@ export default {
   }
   .sheets-fixed {
     position: fixed;
+  }
+  .title-link {
+    color: white;
+    text-decoration: none;
   }
 </style>

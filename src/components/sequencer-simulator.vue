@@ -32,7 +32,7 @@
             <v-progress-circular class="no-transition" :value="currentActionProgress">{{ (beatsTotal - beatsUntilNextAction) + 1 }}</v-progress-circular>
           </v-btn>
           <v-btn @click="onNext">
-            <v-icon>mdi-skip-next-outline</v-icon>
+            <v-icon>mdi-skip-next</v-icon>
           </v-btn>
          </v-item-group>
       </v-row>
