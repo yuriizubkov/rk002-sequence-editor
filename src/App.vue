@@ -15,7 +15,7 @@
       <v-btn icon outlined rounded class="mr-1">
         <v-icon>mdi-arrow-up-bold</v-icon>
       </v-btn>      
-      <v-btn icon outlined rounded class="mr-1" @click="onSyncClick">
+      <v-btn icon outlined rounded class="mr-1" @click.stop="configDialog = true">
         <v-icon>mdi-cog</v-icon>
       </v-btn>
     </v-app-bar>
@@ -99,6 +99,49 @@
       </template>
     </v-snackbar>
     <v-footer inset app>{{ statusBarText }}</v-footer>
+    <v-dialog
+      v-model="configDialog"
+      max-width="600"
+    >
+      <v-card>
+        <v-card-title>
+          <span class="headline">MIDI Configuration</span>
+        </v-card-title>
+        <v-card-text class="pb-0">
+          <v-container>
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-select
+                  :items="midiInputs"
+                  label="Input"
+                  required
+                  outlined
+                  dense
+                ></v-select>
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-autocomplete
+                  :items="midiOutputs"
+                  label="Output"
+                  required
+                  outlined
+                  dense
+                ></v-autocomplete>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="configDialog = false">
+            Close
+          </v-btn>
+          <v-btn color="blue darken-1" text @click="configDialog = false">
+            Save
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -116,13 +159,16 @@ export default {
   },
 
   data: () => ({
+    configDialog: false,
+    midiInputs: [],
+    midiOutputs: [],
     activeTab: 1,
     snackbar: false,
     snackbarText: '',
     snackbarColor: 'red',
     statusBarText: "Status bar",
     links: [
-      { title: "RK002 - Circuit Song Mode", url: "" },
+      { title: "RK002 Circuit Song Mode", url: "" },
       { title: "About", url: "/retrokits/2020/11/24/rk002-circuit-song-mode.html" }
     ],
   }),
