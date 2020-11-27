@@ -226,9 +226,27 @@ export default {
     },
     firmwareInfo: function(val) {
       if(!val) return
-      // check if correct software and show error if not
+      // check if correct software installed on RK002 and show error if not
       if (val.version !== this.expectedFirmwareVersion || val.guid !== this.expectedFirmwareGUID) {
         this.setErrorMessage('You have unsupported software on the RK002')
+      }
+    },
+    connected: async function(val) {
+      if(!val) return
+      // requesting parameters after successfull connection
+      const sleep = ms => new Promise(r => setTimeout(r, ms))
+      await sleep(50) //50ms delay. When requesting too fast - device is not responding.
+      try {
+        await this.fetchParameters()
+        // if sequence is empty - load sequence, if not - ask user what to do
+        if(this.sequence.filter(action => action === null).length === this.sequence.length) {
+          this.parseAndLoadSequence()
+        } else {
+          // TODO: ask
+        }
+      } catch (err) {
+        this.setErrorMessage('Error loading sequence from RK002')
+        console.error('Watcher "connected" error:', err)
       }
     }
   },
@@ -253,14 +271,16 @@ export default {
       'setSelectedMidiOutputId']),
     ...mapActions([
       'initWebMIDI',
-      'tryToConnect'
-    ])
+      'tryToConnect',
+      'fetchParameters',
+      'parseAndLoadSequence'])
   },
   mounted: async function() {
     try {      
       await this.initWebMIDI()
     } catch(err) {
-      console.error("onMounted error:", err)
+      this.setErrorMessage('Error: can\'t init Web MIDI')
+      console.error('On "mounted" error:', err)
     }
   }
 }

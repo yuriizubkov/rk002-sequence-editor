@@ -2,9 +2,9 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 // @ - is an alias for src folder here
 import RK002MIDIObserver from '@/assets/js/rk002-wrapper'
+import SequencerAction from '@/assets/js/sequencer-action'
 
 Vue.use(Vuex)
-
 const midiObserver = new RK002MIDIObserver()
 
 export default new Vuex.Store({
@@ -19,54 +19,32 @@ export default new Vuex.Store({
     midiInputsAndOutputs: null,
     selectedMidiInputId: -1,
     selectedMidiOutputId: -1,
-    actionTypes: [ 
-      {
-        valid: false,
-        actionTypeId: 1,
-        title: "Switch Session",
-        hint: "Switch session to session number",
-        color: "primary",
-        icon: "mdi-skip-next-circle-outline",
+    rawDeviceData: [],
+    actionTypes: [
+      new SequencerAction({
+        actionTypeId: SequencerAction.Type.SwitchSession,
         sessionIndex: 0,
         nextActionOnBeat: 4
-      }, {
-        valid: false,
-        actionTypeId: 3,
-        title: "Loop Sessions",
-        hint: "Loop sessions from session number to session number",
-        color: "indigo",
-        icon: "mdi-restore",
+      }),
+      new SequencerAction({
+        actionTypeId: SequencerAction.Type.LoopSessions,
         startSessionIndex: 0,
         endSessionIndex: 7,
         repeats: 4
-      }, {
-        valid: false,
-        actionTypeId: 4,
-        title: "Loop Actions",
-        hint: "Loop actions from action number to action number",
-        color: "cyan",
-        icon: "mdi-restore",
+      }),
+      new SequencerAction({
+        actionTypeId: SequencerAction.Type.LoopActions,
         startActionIndex: 0,
         endActionIndex: 3,
         repeats: 4
-      }, {
-        valid: false,
-        actionTypeId: 5,
-        title: "Jump to Action",
-        hint: "Jump to action number",
-        color: "orange",
-        icon: "mdi-debug-step-over",
-        toActionIndex: 0,
-      }, {
-        valid: true, // nothing to edit here
-        actionTypeId: 2,
-        title: "Stop Sequence",
-        hint: 'Stop sequencer. Circuit will play last loaded session.',
-        color: "pink",
-        icon: "mdi-stop-circle-outline"
-      },
-      //{ actionTypeId: 6, title: "Reserved" }, not sure what types of actions we need
-      //{ actionTypeId: 7, title: "Reserved" },
+      }),
+      new SequencerAction({
+        actionTypeId: SequencerAction.Type.JumpToAction,
+        toActionIndex: 0
+      }),
+      new SequencerAction({
+        actionTypeId: SequencerAction.Type.StopSequence,
+      })
     ],
   },
   getters: {
@@ -182,12 +160,15 @@ export default new Vuex.Store({
     setFirmwareInfo(state, value) {
       state.firmwareInfo = value
     },
+    setRawDeviceData(state, value) {
+      state.rawDeviceData = value
+    },
     clearSequenceActionAt(state, actionIndex) {
       Vue.set(state.sequence, actionIndex, null)
     },
     addSequenceActionAt(state, args) {
       const actionType = state.actionTypes.find(entry => entry.actionTypeId === args.actionTypeId)
-      Vue.set(state.sequence, args.actionIndex, Object.assign({}, actionType)) // cloning action type to array entry
+      Vue.set(state.sequence, args.actionIndex, actionType.clone())
     },
     modifySequenceActionAt(state, args) {
       const sequenceEntry = state.sequence[args.actionIndex]
@@ -205,7 +186,9 @@ export default new Vuex.Store({
   },
   actions: {
     initWebMIDI: async function({ commit, dispatch }) {
-      midiObserver.onMidiStateChange = port => dispatch('onMidiStateChange', port)
+      if(!midiObserver.onMidiStateChange)
+        midiObserver.onMidiStateChange = port => dispatch('onMidiStateChange', port)
+      
       const midiInputsAndOutputs = await midiObserver.initWebMIDI()
       commit('setMidiInputsAndOutputs', midiInputsAndOutputs)
 
@@ -249,6 +232,25 @@ export default new Vuex.Store({
           context.commit('addMidiOutputPort', port)
           context.dispatch('tryToConnect')
         }
+      }
+    },
+    onParamDefsFetched: function(context, params) {
+      // Object.freeze will prevent Vue adding 'reactivity' to an array items
+      context.commit('setRawDeviceData', Object.freeze(params)) 
+    },
+    fetchParameters: async function(context) {
+      if(!midiObserver.onParamDefs)
+        midiObserver.onParamDefs = params => context.dispatch('onParamDefsFetched', params)
+
+      await midiObserver.fetchParameters() // we are getting callback with results from onParamDefsFetched
+    },
+    parseAndLoadSequence: function(context) {
+      if(!context.state.rawDeviceData || context.state.rawDeviceData.length === 0)
+        throw new Error('Raw data is not loaded from the RK002 yet')
+
+      for (let param of context.state.rawDeviceData) {
+        const action = new SequencerAction(param.val)
+        console.log('Action:', action)
       }
     },
     tryToConnect: async function(context) {
