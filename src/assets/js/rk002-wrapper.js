@@ -1,6 +1,6 @@
 'use strict'
 
-import RK002 from './RK002lib'
+import RK002 from '@/assets/js/RK002lib'
 
 // RK002lib Wrapper
 class RK002MIDIObserver {
@@ -62,6 +62,8 @@ class RK002MIDIObserver {
     this._pendingPromise.resolve(param)
     this._pendingPromise = null
   }
+
+  // RK002 lib specific part END
 
   _onMidiStateChange(e) {
     if(e.port.type === "input" && !this._allInputs.find(input => input.id === e.port.id)) {

@@ -173,10 +173,7 @@
 <script>
 import SequencerSimulator from "./components/sequencer-simulator"
 import SequenceEntry from "./components/sequence-entry"
-import { mapState, mapMutations, mapGetters } from 'vuex'
-import RK002MIDIObserver from './assets/js/rk002-wrapper'
-
-const midiObserver = new RK002MIDIObserver()
+import { mapState, mapMutations, mapGetters, mapActions } from 'vuex'
 
 export default {
   name: "rk002-sequence-editor",
@@ -186,15 +183,8 @@ export default {
     SequencerSimulator
   },
 
-  data: () => ({
-    expectedFirmwareGUID: "c1825f6a-45fd-4ccc-b470-e3064ee4f94f",
-    expectedFirmwareVersion: "1.0",
-    commInProcess: false,
-    firmwareInfo: null,
+  data: () => ({    
     configDialog: false,
-    midiInputsAndOutputs: null,
-    selectedMidiInputId: -1,
-    selectedMidiOutputId: -1,
     activeTab: 1,
     snackbar: false,
     snackbarText: '',
@@ -206,51 +196,24 @@ export default {
     ],
   }),
 
-  computed: { 
-    midiInputs: function() {
-      if(this.midiInputsAndOutputs === null) return []
-      return this.midiInputsAndOutputs.inputs.map(input => { 
-        return { 
-          text: input.name, 
-          value: input.id,
-          disabled: input.state === "disconnected"
-        } 
-      })
-    },
-    midiOutputs: function() {
-      if(this.midiInputsAndOutputs === null) return []
-      return this.midiInputsAndOutputs.outputs.map(output => { 
-        return { 
-          text: output.name, 
-          value: output.id,
-          disabled: output.state === "disconnected"
-        } 
-      })
-    },
-    connected: function() {
-      if(!this.midiInputsAndOutputs) return false
-
-      const input = this.midiInputsAndOutputs.inputs.find(input => input.id === this.selectedMidiInputId)
-      const output = this.midiInputsAndOutputs.outputs.find(output => output.id === this.selectedMidiOutputId)
-
-      return this.firmwareInfo &&
-        input &&
-        output &&
-        input.state === "connected" &&
-        output.state === "connected"
-    },
-    commDisabled: function() {
-      return !this.connected ||
-        this.commInProcess ||
-        !this.firmwareInfo || 
-        this.firmwareInfo.version !== this.expectedFirmwareVersion || 
-        this.firmwareInfo.guid !== this.expectedFirmwareGUID
-    },
+  computed: {    
     ...mapState([
       'actionTypes',
       'errorMessage', 
-      'sequence']),
-    ...mapGetters(['sequenceValid'])
+      'sequence',
+      'commInProcess',
+      'selectedMidiInputId',
+      'selectedMidiOutputId',
+      'firmwareInfo',
+      'expectedFirmwareVersion',
+      'expectedFirmwareGUID']),
+    ...mapGetters([
+      'sequenceValid',
+      'connected',
+      'commDisabled',
+      'midiInputs',
+      'midiOutputs'
+      ])
   },
 
   watch: {
@@ -260,16 +223,6 @@ export default {
         this.setErrorMessage('')
         this.snackbar = true
       }
-    },
-    selectedMidiInputId: async function(val) {
-      localStorage.selectedMidiInputId = val
-      if(!midiObserver.setMidiInputId(this.selectedMidiInputId)) return
-      this.tryToConnect()
-    },
-    selectedMidiOutputId: async function(val) {
-      localStorage.selectedMidiOutputId = val
-      if(!midiObserver.setMidiOutputId(this.selectedMidiOutputId)) return
-      this.tryToConnect()
     },
     firmwareInfo: function(val) {
       if(!val) return
@@ -292,74 +245,20 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
-    onMidiStateChange: function(port) { // TODO: NEED TO REFACTOR this mess. Let's make just one source of ports - rk002-wrapper
-      if(port.type === "input") {
-        const item = this.midiInputsAndOutputs.inputs.find(item => item.id === port.id)
-        if(item) {
-          // existing input port
-          item.state = port.state
-          if(item.id === this.selectedMidiInputId) {
-            if(item.state === "disconnected") this.firmwareInfo = null
-            else this.tryToConnect()
-          }
-        } else {
-          // new input port
-          this.midiInputsAndOutputs.inputs.push(port)
-          this.tryToConnect()
-        }
-      } else if (port.type === "output") {
-        const item = this.midiInputsAndOutputs.outputs.find(item => item.id === port.id)
-        if(item) {
-          // existing input port
-          item.state = port.state
-          if(item.id === this.selectedMidiOutputId) {
-            if(item.state === "disconnected") this.firmwareInfo = null
-            else this.tryToConnect()
-          }
-        } else {
-          // new input port
-          this.midiInputsAndOutputs.outputs.push(port)
-          this.tryToConnect()
-        }
-      }
-    },
-    tryToConnect: async function() {
-      // probably good idea to add debounce timeout here, when we have a bunch of events for new devices
-      if(this.selectedMidiInputId !== -1 && 
-        this.selectedMidiOutputId !== -1 && 
-        !this.commInProcess) {
-
-        this.commInProcess = true
-        this.firmwareInfo = null
-        try {
-          this.firmwareInfo = await midiObserver.inquiryDevice()
-        } catch (err) {
-          console.error("tryToConnect error:", err)
-        }
-
-        this.commInProcess = false
-      }
-    },
     ...mapMutations([
       'clearSequenceActionAt', 
       'addSequenceActionAt',
-      'setErrorMessage'])
+      'setErrorMessage',
+      'setSelectedMidiInputId',
+      'setSelectedMidiOutputId']),
+    ...mapActions([
+      'initWebMIDI',
+      'tryToConnect'
+    ])
   },
-
   mounted: async function() {
-    try {
-      midiObserver.onMidiStateChange = this.onMidiStateChange.bind(this)
-      this.midiInputsAndOutputs = await midiObserver.initWebMIDI()
-
-      if(localStorage.selectedMidiInputId) {
-        midiObserver.setMidiInputId(localStorage.selectedMidiInputId)
-        this.selectedMidiInputId = localStorage.selectedMidiInputId        
-      }
-
-      if(localStorage.selectedMidiOutputId) {
-        midiObserver.setMidiOutputId(localStorage.selectedMidiOutputId)
-        this.selectedMidiOutputId = localStorage.selectedMidiOutputId 
-      }
+    try {      
+      await this.initWebMIDI()
     } catch(err) {
       console.error("onMounted error:", err)
     }
