@@ -7,11 +7,14 @@ class RK002MIDIObserver {
   constructor() {
     this._midiAccess = null
     this._pendingPromise = null
-    this._busyErr = Error("Device is busy")
+    this._busyErr = new Error("Device is busy")
     this._midiInputId = null
     this._midiOutputId = null
+    this._paramsCount = 0
+    this._paramsCountExpected = 1
 
     this.onParamDefs = null
+    this.onParam = null
     this.onMidiStateChange = null
 
     this.rk002 = new RK002.Loader()
@@ -57,10 +60,12 @@ class RK002MIDIObserver {
 
   // called when a parameter-value has changed (or initially fetched)
   rk002_onParam(param) {
-    if (!this._pendingPromise) return
-
-    this._pendingPromise.resolve(param)
-    this._pendingPromise = null
+    this.onParam && this.onParam(param)
+    this._paramsCount++
+    if(this._paramsCount === this._paramsCountExpected && this._pendingPromise) {
+      this._pendingPromise.resolve()
+      this._pendingPromise = null
+    }
   }
 
   // RK002 lib specific part END
@@ -164,19 +169,29 @@ class RK002MIDIObserver {
   fetchParameters() {
     return new Promise((resolve, reject) => {
       if (this._pendingPromise) return reject(this._busyErr)
-
       this._pendingPromise = { resolve, reject }
+      this._paramsCount = 0 
+      this._paramsCountExpected = 32     
       this.rk002.fetchParams()
     })
   }
 
-  sendParameterValue(nr, val) {
+  async sendParameterValues(paramValues) {
+    if (this._pendingPromise) throw this._busyErr
+
+    for (let [ind, val] of paramValues.entries()) {
+      if (val > 65535 || val < 0) throw new Error('Parameter value should be from 0 to 65535')
+      await this.sendParameter(ind, val)
+    }
+  }
+
+  sendParameter(index, value) {
     return new Promise((resolve, reject) => {
       if (this._pendingPromise) return reject(this._busyErr)
-      if (val > 65535 || val < 0) return reject(Error('Parameter value should be from 0 to 65535'))
-
       this._pendingPromise = { resolve, reject }
-      this.rk002.setParamVal(nr, val)
+      this._paramsCount = 0 
+      this._paramsCountExpected = 1  
+      this.rk002.setParamVal(index, value)
     })
   }
 }

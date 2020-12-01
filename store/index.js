@@ -19,7 +19,7 @@ export default new Vuex.Store({
     midiInputsAndOutputs: null,
     selectedMidiInputId: -1,
     selectedMidiOutputId: -1,
-    rawDeviceData: [],
+    rawDeviceData: new Array(32).fill(null),
     actionTypes: [
       new SequencerAction({
         actionTypeId: SequencerAction.Type.SwitchSession,
@@ -160,8 +160,10 @@ export default new Vuex.Store({
     setFirmwareInfo(state, value) {
       state.firmwareInfo = value
     },
-    setRawDeviceData(state, value) {
-      state.rawDeviceData = value
+    setRawDeviceDataEntry(state, value) {
+      // Object.freeze prevents Vue of adding 'reactivity'
+      let entry = Object.assign({}, value)
+      state.rawDeviceData[value.nr] = Object.freeze(entry)
     },
     clearSequenceActionAt(state, actionIndex) {
       Vue.set(state.sequence, actionIndex, null)
@@ -208,55 +210,60 @@ export default new Vuex.Store({
         commit('setSelectedMidiOutputId', localStorage.selectedMidiOutputId)   
       }
     },
-    onMidiStateChange: function (context, port) {
+    onMidiStateChange: function ({ state, commit, dispatch }, port) {
       if (port.type === "input") {
-        const item = context.state.midiInputsAndOutputs.inputs.find(item => item.id === port.id)
+        const item = state.midiInputsAndOutputs.inputs.find(item => item.id === port.id)
         if (item) {
           // existing input port
           item.state = port.state
-          if (item.id === context.state.selectedMidiInputId) {
-            if (item.state === "disconnected") context.state.firmwareInfo = null
-            else context.dispatch('tryToConnect')
+          if (item.id === state.selectedMidiInputId) {
+            if (item.state === "disconnected") state.firmwareInfo = null
+            else dispatch('tryToConnect')
           }
         } else {
           // new input port
-          context.commit('addMidiInputPort', port)
-          context.dispatch('tryToConnect')
+          commit('addMidiInputPort', port)
+          dispatch('tryToConnect')
         }
       } else if (port.type === "output") {
-        const item = context.state.midiInputsAndOutputs.outputs.find(item => item.id === port.id)
+        const item = state.midiInputsAndOutputs.outputs.find(item => item.id === port.id)
         if (item) {
           // existing output port
           item.state = port.state
-          if (item.id === context.state.selectedMidiOutputId) {
-            if (item.state === "disconnected") context.state.firmwareInfo = null
-            else context.dispatch('tryToConnect')
+          if (item.id === state.selectedMidiOutputId) {
+            if (item.state === "disconnected") state.firmwareInfo = null
+            else dispatch('tryToConnect')
           }
         } else {
           // new output port
-          context.commit('addMidiOutputPort', port)
-          context.dispatch('tryToConnect')
+          commit('addMidiOutputPort', port)
+          dispatch('tryToConnect')
         }
       }
     },
-    onParamDefsFetched: function(context, params) {
-      // Object.freeze will prevent Vue adding 'reactivity' to an array items
-      context.commit('setRawDeviceData', Object.freeze(params)) 
-    },
-    fetchParameters: async function(context) {
-      if(!midiObserver.onParamDefs)
-        midiObserver.onParamDefs = params => context.dispatch('onParamDefsFetched', params)
+    fetchParameters: async function({ commit }) {
+      if(!midiObserver.onParam)
+        midiObserver.onParam = param => commit('setRawDeviceDataEntry', param)
 
-      await midiObserver.fetchParameters() // we are getting callback with results from onParamDefsFetched
+      commit('setCommInProcess', true)
+      let error = null
+
+      try {
+        await midiObserver.fetchParameters() // we are getting callback with results from onParamChanged
+      } catch(err) {
+        error = err
+      }
+
+      commit('setCommInProcess', false)
+      if(error) throw error
     },
-    parseAndLoadSequence: function(context) {
-      if(!context.state.rawDeviceData || context.state.rawDeviceData.length !== 32)
+    parseAndLoadSequence: function({ state, commit }) {
+      if(!state.rawDeviceData || state.rawDeviceData.filter(entry => entry === null).length !== 0)
         throw new Error('Raw data is not loaded from the RK002 yet')
 
-      for (let param of context.state.rawDeviceData) {
+      for (let param of state.rawDeviceData) {
         let action = null
         if(param.nr <= 29) {
-
           try {
             action = new SequencerAction(param.val)
           } catch(err) {
@@ -265,30 +272,49 @@ export default new Vuex.Store({
             console.log(param, err) 
           }
 
-          context.commit('setSequencerActionAt', { 
+          commit('setSequencerActionAt', { 
             actionIndex: param.nr,
             newValue: action
           })
+        } else {
+          // TODO: process config params here, if needed
         }
       }
     },
-    tryToConnect: async function(context) {
+    parseAndUploadSequence: async function({ state, getters, commit }) {
+      if(!state.commInProcess && getters.sequenceValid()) {
+        commit('setCommInProcess', true)
+
+        const paramValues = state.sequence.map(entry => entry ? entry.getUserParamValue() : 0)
+        paramValues.push(0, 0) // TODO: push two 16 bit config params here
+
+        try {
+          await midiObserver.sendParameterValues(paramValues)
+        } catch(err) {
+          console.error(err)
+          commit('setErrorMessage', 'Error sending sequence to the RK002')
+        }
+
+        commit('setCommInProcess', false)
+      }
+    },
+    tryToConnect: async function({ state, commit, getters }) {
       // probably good idea to add debounce timeout here, 
       // because we have a bunch of events for new added devices in case when we connecting RK006
-      if(context.state.selectedMidiInputId !== -1 && 
-        context.state.selectedMidiOutputId !== -1 && 
-        !context.getters.commInProcess) {
+      if(state.selectedMidiInputId !== -1 && 
+        state.selectedMidiOutputId !== -1 && 
+        !getters.commInProcess) {
 
-        context.commit('setCommInProcess', true)
-        context.commit('setFirmwareInfo', null)
+        commit('setCommInProcess', true)
+        commit('setFirmwareInfo', null)
         try {
           const firmwareInfo = await midiObserver.inquiryDevice()
-          context.commit('setFirmwareInfo', firmwareInfo)
+          commit('setFirmwareInfo', firmwareInfo)
         } catch (err) {
           console.error("tryToConnect error:", err)
         }
 
-        context.commit('setCommInProcess', false)
+        commit('setCommInProcess', false)
       }
     },
   }  

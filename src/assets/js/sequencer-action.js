@@ -123,6 +123,41 @@ export default class SequencerAction {
     // 7 - reserved
   }
 
+  getUserParamValue() {
+    let paramValue = 0
+
+    switch (this.actionTypeId) {
+      case SequencerAction.Type.SwitchSession: {
+        // Session index 0 - 31, 5 LSBs of the 2nd byte
+        paramValue = this.actionTypeId << 5
+        paramValue = (paramValue | this.sessionIndex) << 8
+        paramValue = paramValue | this.nextActionOnBeat
+        break
+      }
+
+      case SequencerAction.Type.LoopSessions: {
+        // this.startSessionIndex = 0
+        // this.endSessionIndex = 7
+        // this.repeats = 4
+        break
+      }
+
+      case SequencerAction.Type.LoopActions: {
+        // this.startActionIndex = 0,
+        // this.endActionIndex = 3,
+        // this.repeats = 4
+        break
+      }
+
+      case SequencerAction.Type.JumpToAction: {
+        //this.toActionIndex = 0
+        break
+      }
+    }
+
+    return paramValue
+  }
+
   clone() {
     return new SequencerAction(Object.assign({} , this))
   }

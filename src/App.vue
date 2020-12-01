@@ -11,7 +11,7 @@
       </v-tabs>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on" :disabled="commDisabled">
+          <v-btn icon outlined rounded class="mr-1" @click="onDownloadClick" v-bind="attrs" v-on="on" :disabled="commDisabled">
             <v-icon>mdi-arrow-down-bold</v-icon>
           </v-btn>
         </template>
@@ -19,7 +19,7 @@
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn icon outlined rounded class="mr-1" v-bind="attrs" v-on="on" :disabled="commDisabled">
+          <v-btn icon outlined rounded class="mr-1" @click="onUploadClick" v-bind="attrs" v-on="on" :disabled="commDisabled">
             <v-icon>mdi-arrow-up-bold</v-icon>
           </v-btn>  
         </template>
@@ -196,7 +196,7 @@ export default {
     ],
   }),
 
-  computed: {    
+  computed: {
     ...mapState([
       'actionTypes',
       'errorMessage', 
@@ -263,6 +263,14 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
+    onDownloadClick: function() {
+      if(!this.commInProcess && this.sequenceValid()) {
+        console.log('Downloading')
+      }
+    },
+    onUploadClick: function() {
+      this.parseAndUploadSequence()
+    },
     ...mapMutations([
       'clearSequenceActionAt', 
       'addSequenceActionAt',
@@ -273,7 +281,8 @@ export default {
       'initWebMIDI',
       'tryToConnect',
       'fetchParameters',
-      'parseAndLoadSequence'])
+      'parseAndLoadSequence',
+      'parseAndUploadSequence'])
   },
   mounted: async function() {
     try {      
