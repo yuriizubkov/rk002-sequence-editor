@@ -1,11 +1,11 @@
 <template>
   <v-card-text>
-    <v-form v-if="model" v-model="model.valid">
+    <v-form v-if="action" v-model="action.valid">
       <v-container class="pt-0 pb-0">
         <v-row>
           <v-col cols="12" lg="6" xl="4" class="pb-0">
             <v-select
-              v-model="selected"
+              v-model="action.toActionIndex"
               :items="items"
               :rules="rules"
               label="Action number"
@@ -19,7 +19,7 @@
   </v-card-text>
 </template>
 <script>
-import { mapState, mapMutations } from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   props: {
@@ -34,7 +34,6 @@ export default {
   },
   
   data: () => ({
-    model: null,
     selected: 0,
     rules: [
       (v) => !isNaN(v) || "Action should be selected"
@@ -59,30 +58,6 @@ export default {
       })
     },
     ...mapState(['sequence'])
-  },
-
-  watch: {
-    model: {
-      handler(val) {
-        this.modifySequenceActionAt({ actionIndex: this.actionIndex, newValue: val })
-      },
-      deep: true
-    }, 
-    selected: function() {
-      this.model.toActionIndex = Number(this.selected)
-    }
-  },
-
-  methods: {
-    ...mapMutations(['modifySequenceActionAt'])
-  },
-
-  mounted: function () {
-    this.$nextTick(function () {
-      // Code that will run only after the
-      // entire view has been rendered
-      this.model = Object.assign({}, this.action) // cloning action
-    })
   }
 }
 </script>

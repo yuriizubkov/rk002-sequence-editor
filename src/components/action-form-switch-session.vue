@@ -1,6 +1,6 @@
 <template>
   <v-card-text>
-    <v-form v-if="model" v-model="model.valid">
+    <v-form v-if="action" v-model="action.valid">
       <v-container class="pt-0 pb-0">
         <v-row>
           <v-col cols="12" md="4" class="pb-0">
@@ -29,22 +29,17 @@
   </v-card-text>
 </template>
 <script>
-import { mapState, mapMutations } from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   props: {
     action: {
       type: Object,
       required: true
-    },
-    actionIndex: {
-      type: Number,
-      required: true
     }
   },
 
   data: () => ({
-    model: null,
     sessionNumber: 1,
     beatsCount: 4,
     sessionRules: [
@@ -68,33 +63,22 @@ export default {
   }),
 
   watch: {
-    model: {
-      handler(val) {
-        this.modifySequenceActionAt({ actionIndex: this.actionIndex, newValue: val })
-      },
-      deep: true
-    }, 
     sessionNumber: function(val) {
-      if(!this.model) return
-      this.model.sessionIndex = Number(val) - 1 // this will trigger model watcher
+      if(!this.action) return
+      this.action.sessionIndex = Number(val) - 1
     },
     beatsCount: function(val) {
-      if(!this.model) return
-      this.model.nextActionOnBeat = Number(val) // this will trigger model watcher
+      if(!this.action) return
+      this.action.nextActionOnBeat = Number(val)
     }
   },
 
   computed: mapState(['sequence']),
 
-  methods: {
-    ...mapMutations(['modifySequenceActionAt'])
-  },
-
-  mounted: function () {
-    this.$nextTick(function () {
-      // Code that will run only after the
-      // entire view has been rendered
-      this.model = Object.assign({}, this.action) // cloning action
+  mounted: function() {
+    this.$nextTick(function() {
+      this.sessionNumber = this.action.sessionIndex + 1
+      this.beatsCount = this.action.nextActionOnBeat
     })
   }
 }

@@ -167,8 +167,13 @@ export default new Vuex.Store({
       Vue.set(state.sequence, actionIndex, null)
     },
     addSequenceActionAt(state, args) {
+      // adding new action from the list
       const actionType = state.actionTypes.find(entry => entry.actionTypeId === args.actionTypeId)
       Vue.set(state.sequence, args.actionIndex, actionType.clone())
+    },
+    setSequencerActionAt(state, args) {
+      // adding new action from loaded from the device
+      Vue.set(state.sequence, args.actionIndex, args.newValue)
     },
     modifySequenceActionAt(state, args) {
       const sequenceEntry = state.sequence[args.actionIndex]
@@ -245,12 +250,24 @@ export default new Vuex.Store({
       await midiObserver.fetchParameters() // we are getting callback with results from onParamDefsFetched
     },
     parseAndLoadSequence: function(context) {
-      if(!context.state.rawDeviceData || context.state.rawDeviceData.length === 0)
+      if(!context.state.rawDeviceData || context.state.rawDeviceData.length !== 32)
         throw new Error('Raw data is not loaded from the RK002 yet')
 
       for (let param of context.state.rawDeviceData) {
-        const action = new SequencerAction(param.val)
-        console.log('Action:', action)
+        let action = null
+
+        try {
+          action = new SequencerAction(param.val)
+        } catch(err) {
+          // this isn't really an error here, 
+          // constructor will throw an error in case if action type is undefined or sequencer slot is empty
+          console.log(param, err) 
+        }
+
+        context.commit('setSequencerActionAt', { 
+          actionIndex: param.nr,
+          newValue: action
+        })
       }
     },
     tryToConnect: async function(context) {

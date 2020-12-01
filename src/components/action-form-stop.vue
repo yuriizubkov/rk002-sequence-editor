@@ -9,10 +9,6 @@ export default {
     action: {
       type: Object,
       required: true
-    },
-    actionIndex: {
-      type: Number,
-      required: true
     }
   }
 }
