@@ -10,9 +10,9 @@
       <v-card-subtitle v-if="action === null">Add new action by dropping here an action type from the list</v-card-subtitle>
       <ActionFormSwitchSession v-if="action !== null && action.actionTypeId === 1" :action="action" />
       <ActionFormStop v-if="action !== null && action.actionTypeId === 2" :action="action" />
-      <ActionFormLoopSessions v-if="action !== null && action.actionTypeId === 3" :action="action" :actionIndex="actionIndex" />
+      <ActionFormLoopSessions v-if="action !== null && action.actionTypeId === 3" :action="action" />
       <ActionFormLoopActions v-if="action !== null && action.actionTypeId === 4" :action="action" />
-      <ActionFormJump v-if="action !== null && action.actionTypeId === 5" :action="action" />
+      <ActionFormJump v-if="action !== null && action.actionTypeId === 5" :action="action" :actionIndex="actionIndex" />
   </v-card>
 </template>
 <script>
