@@ -255,19 +255,21 @@ export default new Vuex.Store({
 
       for (let param of context.state.rawDeviceData) {
         let action = null
+        if(param.nr <= 29) {
 
-        try {
-          action = new SequencerAction(param.val)
-        } catch(err) {
-          // this isn't really an error here, 
-          // constructor will throw an error in case if action type is undefined or sequencer slot is empty
-          console.log(param, err) 
+          try {
+            action = new SequencerAction(param.val)
+          } catch(err) {
+            // this isn't really an error here, 
+            // constructor will throw an error in case if action type is undefined or sequencer slot is empty
+            console.log(param, err) 
+          }
+
+          context.commit('setSequencerActionAt', { 
+            actionIndex: param.nr,
+            newValue: action
+          })
         }
-
-        context.commit('setSequencerActionAt', { 
-          actionIndex: param.nr,
-          newValue: action
-        })
       }
     },
     tryToConnect: async function(context) {
