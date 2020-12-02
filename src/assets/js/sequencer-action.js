@@ -83,7 +83,7 @@ export default class SequencerAction {
       return
     }
 
-    // parsing the rest here
+    // parsing the rest here, except stop action - it has only action type, that was already parsed above
     switch (actionTypeId) {
       case SequencerAction.Type.SwitchSession: {
         // Session index 0 - 31, 5 LSBs of the 2nd byte
@@ -100,6 +100,7 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.LoopActions: {
+        // TODO: not implemented
         this.startActionIndex = 0,
         this.endActionIndex = 3,
         this.repeats = 4
@@ -107,7 +108,7 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.JumpToAction: {
-        this.toActionIndex = 0
+        this.toActionIndex = byte2 & 0b00011111
         break
       }
     }
@@ -144,6 +145,7 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.LoopActions: {
+        // TODO: not implemented
         // this.startActionIndex = 0,
         // this.endActionIndex = 3,
         // this.repeats = 4
@@ -151,9 +153,12 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.JumpToAction: {
-        //this.toActionIndex = 0
+        paramValue = this.actionTypeId << 5
+        // 0 - 29, 2 last parameters reserved for config
+        paramValue = (paramValue | this.toActionIndex) << 8
         break
       }
+
       case SequencerAction.Type.StopSequence: {
         paramValue = this.actionTypeId << 13 // 8 + 5
         break
