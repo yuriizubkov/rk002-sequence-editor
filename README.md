@@ -7,6 +7,9 @@ This project was inspired of idea of chaining Novation Circuit sessions using pr
 Original idea was borrowed from this video of <strong>Joel Raedeke</strong> on facebook:
 https://www.facebook.com/541868830/videos/10157874187223831
 
+
+Working instance can be found here: https://lensflare.dev/rk002-sequence-editor/
+
 ## How to use
 You need to connect RK002 cable to your MIDI interface on PC as MIDI loopback. Yellow end goes to the input, black - to the output of the MIDI interface. 
 
