@@ -44,6 +44,7 @@ This is described in the repository for the [RK002 custom firmware]() <strong>TO
 - Not working on mobile devices yet. Need to add support for the touch events.
 - There is almost no logic checks for the sequence. For example you can jump on jump action that point on first jump action, and you will get infinite loop and it'll freeze the device :)
 - Ability to remove unused gaps between actions should be implemented, for easier editing experience.
+- No information about progress of reading/writing the sequence
 
 ## Copyright
 You can fork, use, modify this project as you wish. 
