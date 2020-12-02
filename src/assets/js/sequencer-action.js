@@ -93,9 +93,9 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.LoopSessions: {
-        this.startSessionIndex = 0
-        this.endSessionIndex = 7
-        this.repeats = 4
+        this.startSessionIndex = byte2 & 0b00011111
+        this.endSessionIndex = byte1 & 0b00011111
+        this.repeats = (byte1 & 0b11100000) >> 5
         break
       }
 
@@ -124,7 +124,7 @@ export default class SequencerAction {
   }
 
   getUserParamValue() {
-    let paramValue = 0
+    let paramValue = 0 // 16 bit word
 
     switch (this.actionTypeId) {
       case SequencerAction.Type.SwitchSession: {
@@ -136,9 +136,10 @@ export default class SequencerAction {
       }
 
       case SequencerAction.Type.LoopSessions: {
-        // this.startSessionIndex = 0
-        // this.endSessionIndex = 7
-        // this.repeats = 4
+        paramValue = this.actionTypeId << 5
+        paramValue = (paramValue | this.startSessionIndex) << 8
+        paramValue = paramValue | (this.repeats << 5)
+        paramValue = paramValue | this.endSessionIndex
         break
       }
 
@@ -151,6 +152,10 @@ export default class SequencerAction {
 
       case SequencerAction.Type.JumpToAction: {
         //this.toActionIndex = 0
+        break
+      }
+      case SequencerAction.Type.StopSequence: {
+        paramValue = this.actionTypeId << 13 // 8 + 5
         break
       }
     }
