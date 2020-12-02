@@ -19,7 +19,7 @@ How it works with the Circuit:
 You need to connect RK002 cable to your MIDI interface on PC as MIDI loopback. Yellow end goes to the input, black - to the output of the MIDI interface. 
 
 
-This editor should work in conjunction with custom firmware installed on the RK002, that can be downloaded [here]() <strong>TODO:</strong> insert link to github repo here 
+This editor should be used in conjunction with custom firmware installed on the RK002, that can be downloaded [here]() <strong>TODO:</strong> insert link to github repo here 
 
 
 Without this editor you can only record program changes "actions" into sequencer of the RK002. This editor can add some additional sequencer actions, such as Loop Sessions and Jump to Actions. You can edit parameters of all actions in the sequence as well, or made the sequence from scratch and upload it to the RK002.
