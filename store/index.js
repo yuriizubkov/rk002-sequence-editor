@@ -17,8 +17,8 @@ export default new Vuex.Store({
     commInProcess: false,
     firmwareInfo: null,
     midiInputsAndOutputs: null,
-    selectedMidiInputId: -1,
-    selectedMidiOutputId: -1,
+    selectedMidiInputId: localStorage.selectedMidiInputId || -1,
+    selectedMidiOutputId: localStorage.selectedMidiOutputId || -1,
     rawDeviceData: new Array(32).fill(null),
     actionTypes: [
       new SequencerAction({
@@ -146,10 +146,12 @@ export default new Vuex.Store({
     setSelectedMidiInputId(state, value) {
       localStorage.selectedMidiInputId = value
       state.selectedMidiInputId = value
+      midiObserver.setMidiInputId(value)
     },
     setSelectedMidiOutputId(state, value) {
       localStorage.selectedMidiOutputId = value
       state.selectedMidiOutputId = value
+      midiObserver.setMidiOutputId(value)
     },
     setActiveActionIndex(state, value) {
       state.activeActionIndex = value

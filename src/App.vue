@@ -129,7 +129,7 @@
                 <v-select
                   :disabled="commInProcess"
                   :items="midiInputs"
-                  v-model="selectedMidiInputId"
+                  v-model="midiInputId"
                   label="Input (Orange connector)"
                   required
                   outlined
@@ -140,7 +140,7 @@
                 <v-select
                   :disabled="commInProcess"
                   :items="midiOutputs"
-                  v-model="selectedMidiOutputId"
+                  v-model="midiOutputId"
                   label="Output (Black connector)"
                   required
                   outlined
@@ -217,6 +217,22 @@ export default {
   }),
 
   computed: {
+    midiInputId: {
+      get: function() {
+        return this.selectedMidiInputId
+      },
+      set: function(newValue) {
+        this.setSelectedMidiInputId(newValue)
+      }
+    },
+    midiOutputId: {
+      get: function() {
+        return this.selectedMidiOutputId
+      },
+      set: function(newValue) {
+        this.setSelectedMidiOutputId(newValue)
+      }
+    },
     ...mapState([
       'actionTypes',
       'errorMessage', 
