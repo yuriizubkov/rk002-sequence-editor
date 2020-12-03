@@ -19,7 +19,7 @@
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn icon outlined rounded class="mr-1" @click="onUploadClick" v-bind="attrs" v-on="on" :disabled="commDisabled">
+          <v-btn icon outlined rounded class="mr-1" @click="parseAndUploadSequence" v-bind="attrs" v-on="on" :disabled="commDisabled">
             <v-icon>mdi-arrow-up-bold</v-icon>
           </v-btn>  
         </template>
@@ -167,6 +167,25 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="overwriteDialog" max-width="320">
+      <v-card>
+        <v-card-title>
+          Replace current sequence?
+        </v-card-title>
+        <v-card-text>
+          Your current sequence is not empty. <br/>Do you want to replace current sequence with loaded from the RK002?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="onReplace" color="primary">
+            Replace
+          </v-btn>
+          <v-btn @click="overwriteDialog = false">
+            Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -185,6 +204,7 @@ export default {
 
   data: () => ({    
     configDialog: false,
+    overwriteDialog: false, 
     activeTab: 1,
     snackbar: false,
     snackbarText: '',
@@ -236,18 +256,7 @@ export default {
       // requesting parameters after successfull connection
       const sleep = ms => new Promise(r => setTimeout(r, ms))
       await sleep(50) //50ms delay. When requesting too fast - device is not responding.
-      try {
-        await this.fetchParameters()
-        // if sequence is empty - load sequence, if not - ask user what to do
-        if(this.sequence.filter(action => action === null).length === this.sequence.length) {
-          this.parseAndLoadSequence()
-        } else {
-          // TODO: ask
-        }
-      } catch (err) {
-        this.setErrorMessage('Error loading sequence from RK002')
-        console.error('Watcher "connected" error:', err)
-      }
+      this.onDownloadClick()
     }
   },
 
@@ -263,13 +272,25 @@ export default {
     onChipMouseLeave: function() {
       this.statusBarText = "Status bar"
     },
-    onDownloadClick: function() {
-      if(!this.commInProcess && this.sequenceValid()) {
-        console.log('Downloading')
+    onDownloadClick: async function() {
+      if(this.commInProcess) return
+      // if sequence is empty - load sequence, if not - ask user what to do
+      if(this.sequence.filter(action => action === null).length === this.sequence.length) {
+        this.onReplace()
+      } else {
+        // ask user what to do
+        this.overwriteDialog = true
       }
     },
-    onUploadClick: function() {
-      this.parseAndUploadSequence()
+    onReplace: async function() {
+      this.overwriteDialog = false
+      try {
+        await this.fetchParameters()
+        this.parseAndLoadSequence()
+      } catch (err) {
+        this.setErrorMessage('Error loading sequence from RK002')
+        console.error('Method "onReplace" error:', err)
+      }
     },
     ...mapMutations([
       'clearSequenceActionAt', 
