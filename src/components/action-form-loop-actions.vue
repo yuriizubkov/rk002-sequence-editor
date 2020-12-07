@@ -95,7 +95,7 @@ export default {
     this.$nextTick(function () {
       this.actionNumberFrom = this.action.startActionIndex + 1
       this.actionNumberTo = this.action.endActionIndex + 1
-      this.repeats = this.action.repeats
+      this.repeats = this.action.repeats + 1
     })
   }
 }

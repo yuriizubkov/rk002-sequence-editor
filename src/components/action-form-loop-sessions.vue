@@ -96,7 +96,7 @@ export default {
     this.$nextTick(function () {
       this.sessionNumberFrom = this.action.startSessionIndex + 1
       this.sessionNumberTo = this.action.endSessionIndex + 1
-      this.repeats = this.action.repeats
+      this.repeats = this.action.repeats + 1
     })
   }
 }

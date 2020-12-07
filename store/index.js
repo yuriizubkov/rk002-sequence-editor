@@ -268,6 +268,7 @@ export default new Vuex.Store({
         if(param.nr <= 29) {
           try {
             action = new SequencerAction(param.val)
+            action.valid = true
           } catch(err) {
             // this isn't really an error here, 
             // constructor will throw an error in case if action type is undefined or sequencer slot is empty
