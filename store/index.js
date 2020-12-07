@@ -24,19 +24,22 @@ export default new Vuex.Store({
       new SequencerAction({
         actionTypeId: SequencerAction.Type.SwitchSession,
         sessionIndex: 0,
-        nextActionOnBeat: 4
+        nextActionOnBeat: 4,
+        valid: true
       }),
       new SequencerAction({
         actionTypeId: SequencerAction.Type.LoopSessions,
         startSessionIndex: 0,
         endSessionIndex: 7,
-        repeats: 4
+        repeats: 3,
+        valid: true
       }),
       new SequencerAction({
         actionTypeId: SequencerAction.Type.LoopActions,
         startActionIndex: 0,
         endActionIndex: 3,
-        repeats: 4
+        repeats: 3,
+        valid: true
       }),
       new SequencerAction({
         actionTypeId: SequencerAction.Type.JumpToAction,
