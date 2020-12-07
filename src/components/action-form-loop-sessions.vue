@@ -86,7 +86,7 @@ export default {
     },
     repeats: function(val) {
       if(!this.action) return
-      this.action.repeats = Number(val) 
+      this.action.repeats = Number(val) - 1 // 0...7 = 8 beats = 3 bits
     }
   },
 

@@ -158,7 +158,7 @@ export default {
         case 3: {
           // loop sessions, 1 session = 32 beats
           if(this.loopingSessionsRepeats === null) {
-            this.loopingSessionsRepeats = currentAction.repeats
+            this.loopingSessionsRepeats = currentAction.repeats + 1
             this.currentSessionPadIndex = currentAction.startSessionIndex
           } else {
             if(this.currentSessionPadIndex === currentAction.endSessionIndex) {

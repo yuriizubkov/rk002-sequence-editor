@@ -56,8 +56,8 @@ export default {
       (v) => {
           if (Number.isNaN(v) || !Number.isInteger(Number(v))) return "Please enter integer value"
           const intVal = Number(v)
-          if (intVal <= 256 && intVal >= 1) return true
-          else return "Beats must be between 1 and 256"
+          if (intVal <= 255 && intVal >= 1) return true
+          else return "Beats must be between 1 and 255"
         }
     ]
   }),
