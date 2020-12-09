@@ -13,7 +13,7 @@ Working instance can be found here: https://lensflare.dev/rk002-sequence-editor/
 
 How it works with the Circuit:
 
-[![RK002 + Novation Circuit = Song Mode](https://img.youtube.com/vi/y3Zy7tymgSY/0.jpg)](https://www.youtube.com/watch?v=y3Zy7tymgSY)
+[![RK002 + Novation Circuit = Song Mode](https://img.youtube.com/vi/l-ySi74VDOQ/0.jpg)](https://www.youtube.com/watch?v=l-ySi74VDOQ)
 
 ## How to use
 You need to connect RK002 cable to your MIDI interface on PC as MIDI loopback. Yellow end goes to the input, black - to the output of the MIDI interface. 
