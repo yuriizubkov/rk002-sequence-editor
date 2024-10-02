@@ -8,7 +8,7 @@ Original idea was borrowed from this video of <strong>Joel Raedeke</strong> on f
 https://www.facebook.com/541868830/videos/10157874187223831
 
 
-Working instance can be found here: https://lensflare.dev/rk002-sequence-editor/
+Working instance can be found here: https://yuriizubkov.github.io/rk002-sequence-editor/
 
 
 How it works with the Circuit:
